@@ -44,7 +44,7 @@ class Calendar extends SimpleModule
       </div>
     '''
     event: '''
-      <div class="event">
+      <div class="event" draggable="true">
         <div class="event-wrapper">
           <p class="content"></p>
         </div>
@@ -138,8 +138,9 @@ class Calendar extends SimpleModule
     @el.on 'click.calendar', '.day', (e) =>
       @trigger 'dayclick', [$(e.currentTarget)]
 
-    @el.on 'mousedown.calendar', '.day', (e) ->
-      false
+    #Not working with drag
+#    @el.on 'mousedown.calendar', '.day', (e) ->
+#      false
 
     @el.on 'click.calendar', '.event', (e) =>
       $event = $(e.currentTarget)
@@ -164,15 +165,58 @@ class Calendar extends SimpleModule
 
       @trigger 'todocomplete', [todo, $todo]
 
-    @el.on 'mouseenter.calendar', '.event', (e) =>
-      $event = $(e.currentTarget)
-      id = $event.data 'id'
-      @el.find(".event[data-id=#{id}]").addClass('hover')
+    @_bindDrag()
 
-    @el.on 'mouseenter.calendar', '.event', (e) =>
-      $event = $(e.currentTarget)
-      id = $event.data 'id'
-      @el.find(".event[data-id=#{id}]").removeClass('hover')
+  _bindDrag: =>
+    @el.on 'dragstart.calendar', '.event', (e) =>
+      $event = $(e.target)
+      event = $event.data('event')
+      e.originalEvent.dataTransfer.setData('Text', $event.data('id'))
+
+      $copy = $event.clone()
+      $copy.data 'event', event
+
+      $event.css
+        'width': 'auto'
+        'min-width': @el.find('.day').eq(0).width() + 'px'
+      if event.acrossDay and not @isAllDayEvent(event)
+        days = event.end.startOf('day').diff(event.start.startOf('day'), 'd')
+        $event.find('.content').text "(#{days}天) #{event.content}"
+
+      setTimeout =>
+        $event.replaceWith $copy
+        @el.find(".event[data-id=#{event.id}]").css
+          opacity: 0.4
+      , 0
+
+    @el.on 'dragover.calendar', '.day', (e)=>
+      #TODO: add out of range detect
+      #TODO: add multi-day event style
+      e.preventDefault()
+
+    @el.on 'drop.calendar', '.day', (e) =>
+      id = e.originalEvent.dataTransfer.getData('Text')
+      $event = $(".event[data-id='#{id}']")
+      event = $event.data('event')
+      $target = $(e.target)
+      if $target.is '.day'
+        newDate = $target.data('date')
+      else
+        newDate = $target.parents('.day').data('date')
+      return unless newDate
+      differ = event.start.startOf('day').diff(moment(newDate), 'd')
+      if differ is 0
+        $event.css 'opacity', 1
+        return
+
+      @removeEvent(event)
+      event.start.add(-differ, 'd')
+      event.end.add(-differ, 'd')
+      @addEvent(event)
+      @trigger 'eventchanged', [event]
+
+
+
 
   moment: (args...) ->
     if @opts.timezone
