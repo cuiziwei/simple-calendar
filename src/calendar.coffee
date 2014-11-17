@@ -165,6 +165,17 @@ class Calendar extends SimpleModule
 
       @trigger 'todocomplete', [todo, $todo]
 
+# not working with drag
+#    @el.on 'mouseenter.calendar', '.event', (e) =>
+#      $event = $(e.currentTarget)
+#      id = $event.data 'id'
+#      @el.find(".event[data-id=#{id}]").addClass('hover')
+#
+#    @el.on 'mouseleave.calendar', '.event', (e) =>
+#      $event = $(e.currentTarget)
+#      id = $event.data 'id'
+#      @el.find(".event[data-id=#{id}]").removeClass('hover')
+
     @_bindDrag()
 
   _bindDrag: =>
