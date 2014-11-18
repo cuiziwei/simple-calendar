@@ -194,9 +194,9 @@ class Calendar extends SimpleModule
       $event.css
         'width': 'auto'
         'min-width': @el.find('.day').eq(0).width() + 'px'
-      if event.acrossDay and not @isAllDayEvent(event)
-        days = event.end.startOf('day').diff(event.start.startOf('day'), 'd')
-        $event.find('.content').text "(#{days}天) #{event.content}"
+      days = event.end.startOf('day').diff(event.start.startOf('day'), 'd')
+      unless days is 0
+        $event.find('.content').text "(#{days + 1}天) #{event.content}"
 
       setTimeout =>
         $event.replaceWith $copy
@@ -211,7 +211,7 @@ class Calendar extends SimpleModule
       event = @findEvent(id)
       $event = $(".event[data-id='#{id}']")
 
-      differ = event.end.startOf('day').diff(event.start.startOf('day'), 'd')
+      days = event.end.startOf('day').diff(event.start.startOf('day'), 'd')
 
       $target = $(e.target)
       unless $target.is '.day'
@@ -219,8 +219,7 @@ class Calendar extends SimpleModule
 
       $('.day').removeClass 'dragover'
       index =  $('.day').index($target)
-      $('.day').slice(index, differ + index + 1).addClass 'dragover'
-
+      $('.day').slice(index, days + index + 1).addClass 'dragover'
 
 
     @el.on 'drop.calendar', '.day', (e) =>
@@ -229,8 +228,10 @@ class Calendar extends SimpleModule
       $event = $(".event[data-id='#{id}']")
       event = $event.data('event')
       $target = $(e.target)
+
       unless $target.is '.day'
         $target = $target.parents('.day')
+
       newDate = $target.data('date')
       differ = event.start.startOf('day').diff(moment(newDate), 'd')
 
@@ -244,9 +245,6 @@ class Calendar extends SimpleModule
       event.end.add(-differ, 'd')
       @addEvent(event)
       @trigger 'eventchanged', [event]
-
-
-
 
   moment: (args...) ->
     if @opts.timezone
