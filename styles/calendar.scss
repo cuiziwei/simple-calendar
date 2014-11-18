@@ -56,7 +56,9 @@ $event-height: 22px;
           &:last-of-type {
             border-right: none;
           }
-
+          &.dragover {
+            background: #a9a9a9;
+          }
           .info {
             height: 12px;
             padding: 6px 8px;
@@ -222,7 +224,6 @@ $event-height: 22px;
             }
           }
 
-
           &.start .event-content {
             border-top-left-radius: 10px;
             border-bottom-left-radius: 10px;
@@ -242,4 +243,3 @@ $event-height: 22px;
     }
   }
 }
-

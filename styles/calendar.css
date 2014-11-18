@@ -48,6 +48,9 @@
 .simple-calendar .weeks .week .days .day:last-of-type {
   border-right: none;
 }
+.simple-calendar .weeks .week .days .day.dragover {
+  background: #a9a9a9;
+}
 .simple-calendar .weeks .week .days .day .info {
   height: 12px;
   padding: 6px 8px;

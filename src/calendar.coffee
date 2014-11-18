@@ -78,6 +78,8 @@ class Calendar extends SimpleModule
     if @opts.todos
       @addTodo @opts.todos
 
+    @dragging = null
+
   _render: ->
     @el.empty()
       .addClass 'simple-calendar'
@@ -179,10 +181,12 @@ class Calendar extends SimpleModule
     @_bindDrag()
 
   _bindDrag: =>
+    #TODO: fix drag stop half way
     @el.on 'dragstart.calendar', '.event', (e) =>
       $event = $(e.target)
       event = $event.data('event')
       e.originalEvent.dataTransfer.setData('Text', $event.data('id'))
+      @dragging = event.id
 
       $copy = $event.clone()
       $copy.data 'event', event
@@ -200,22 +204,37 @@ class Calendar extends SimpleModule
           opacity: 0.4
       , 0
 
+
     @el.on 'dragover.calendar', '.day', (e)=>
-      #TODO: add out of range detect
-      #TODO: add multi-day event style
       e.preventDefault()
+      id = @dragging
+      event = @findEvent(id)
+      $event = $(".event[data-id='#{id}']")
+
+      differ = event.end.startOf('day').diff(event.start.startOf('day'), 'd')
+
+      $target = $(e.target)
+      unless $target.is '.day'
+        $target = $target.parents('.day')
+
+      $('.day').removeClass 'dragover'
+      index =  $('.day').index($target)
+      $('.day').slice(index, differ + index + 1).addClass 'dragover'
+
+
 
     @el.on 'drop.calendar', '.day', (e) =>
+      e.preventDefault() #prevent firefox
       id = e.originalEvent.dataTransfer.getData('Text')
       $event = $(".event[data-id='#{id}']")
       event = $event.data('event')
       $target = $(e.target)
-      if $target.is '.day'
-        newDate = $target.data('date')
-      else
-        newDate = $target.parents('.day').data('date')
-      return unless newDate
+      unless $target.is '.day'
+        $target = $target.parents('.day')
+      newDate = $target.data('date')
       differ = event.start.startOf('day').diff(moment(newDate), 'd')
+
+      $('.day').removeClass 'dragover'
       if differ is 0
         $event.css 'opacity', 1
         return
