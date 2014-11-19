@@ -185,7 +185,9 @@ class Calendar extends SimpleModule
     @el.on 'dragstart.calendar', '.event', (e) =>
       $event = $(e.currentTarget)
       event = $event.data('event')
+      console.log event
       e.originalEvent.dataTransfer.setData('Text', event.id) #firefox patch
+      e.originalEvent.dataTransfer.effectAllowed = 'move'
       return unless event
       @dragging = event
 
@@ -223,6 +225,7 @@ class Calendar extends SimpleModule
       $('.day').slice(index, days + index + 1).addClass 'dragover'
 
     @el.on 'dragover.calendar', '.day', (e)=>
+      e.originalEvent.dataTransfer.dropEffect = 'move'
       e.preventDefault()
 
     @el.on 'drop.calendar', '.day', (e) =>
