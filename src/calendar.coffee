@@ -67,7 +67,7 @@ class Calendar extends SimpleModule
     throw Error('simple calendar: month option is required') unless @month.isValid()
 
     @_render()
-    @events = 
+    @events =
       inDay: []
       acrossDay: []
     @todos = []
@@ -82,20 +82,20 @@ class Calendar extends SimpleModule
 
   _render: ->
     @el.empty()
-      .addClass 'simple-calendar'
-      .data 'calendar', @
+    .addClass 'simple-calendar'
+    .data 'calendar', @
     $(@_tpl.layout).appendTo(@el)
     @titleEl = @el.find('.week-title')
     @weekdaysEl = @el.find('.weekdays')
     for i in [0..6]
       $('<div class="weekday"></div>')
-        .text(moment().weekday(i).format('ddd'))
-        .appendTo(@weekdaysEl)
+      .text(moment().weekday(i).format('ddd'))
+      .appendTo(@weekdaysEl)
 
     @weeksEl = $('<div class="weeks"></div>')
 
     @el.append(@titleEl)
-      .append(@weeksEl)
+    .append(@weeksEl)
 
     @_renderGrid()
     @_bind()
@@ -119,8 +119,8 @@ class Calendar extends SimpleModule
 
         if date.isSame today
           $day.addClass('today')
-            .find('.desc')
-            .text(@_t 'today')
+          .find('.desc')
+          .text(@_t 'today')
 
         if date.isoWeekday() == 6
           $day.addClass 'sat'
@@ -141,8 +141,8 @@ class Calendar extends SimpleModule
       @trigger 'dayclick', [$(e.currentTarget)]
 
     #Not working with drag
-#    @el.on 'mousedown.calendar', '.day', (e) ->
-#      false
+    #    @el.on 'mousedown.calendar', '.day', (e) ->
+    #      false
 
     @el.on 'click.calendar', '.event', (e) =>
       $event = $(e.currentTarget)
@@ -167,26 +167,27 @@ class Calendar extends SimpleModule
 
       @trigger 'todocomplete', [todo, $todo]
 
-# not working with drag
-#    @el.on 'mouseenter.calendar', '.event', (e) =>
-#      $event = $(e.currentTarget)
-#      id = $event.data 'id'
-#      @el.find(".event[data-id=#{id}]").addClass('hover')
-#
-#    @el.on 'mouseleave.calendar', '.event', (e) =>
-#      $event = $(e.currentTarget)
-#      id = $event.data 'id'
-#      @el.find(".event[data-id=#{id}]").removeClass('hover')
+    # not working with drag
+    #    @el.on 'mouseenter.calendar', '.event', (e) =>
+    #      $event = $(e.currentTarget)
+    #      id = $event.data 'id'
+    #      @el.find(".event[data-id=#{id}]").addClass('hover')
+    #
+    #    @el.on 'mouseleave.calendar', '.event', (e) =>
+    #      $event = $(e.currentTarget)
+    #      id = $event.data 'id'
+    #      @el.find(".event[data-id=#{id}]").removeClass('hover')
 
     @_bindDrag()
 
   _bindDrag: =>
     #TODO: fix drag stop half way
     @el.on 'dragstart.calendar', '.event', (e) =>
-      $event = $(e.target)
+      $event = $(e.currentTarget)
       event = $event.data('event')
-      e.originalEvent.dataTransfer.setData('Text', $event.data('id'))
-      @dragging = event.id
+      e.originalEvent.dataTransfer.setData('Text', event.id) #firefox patch
+      return unless event
+      @dragging = event
 
       $copy = $event.clone()
       $copy.data 'event', event
@@ -194,57 +195,56 @@ class Calendar extends SimpleModule
       $event.css
         'width': 'auto'
         'min-width': @el.find('.day').eq(0).width() + 'px'
-      days = event.end.startOf('day').diff(event.start.startOf('day'), 'd')
-      unless days is 0
+
+      days = event.end.clone().startOf('day').diff(event.start.clone().startOf('day'), 'd')
+      if days > 1
         $event.find('.content').text "(#{days + 1}天) #{event.content}"
 
       setTimeout =>
         $event.replaceWith $copy
-        @el.find(".event[data-id=#{event.id}]").css
-          opacity: 0.4
+        @el.find(".event[data-id=#{event.id}]").addClass 'dragged'
       , 0
 
+      @trigger 'eventdragstart', [event]
 
-    @el.on 'dragover.calendar', '.day', (e)=>
+    @el.on 'dragend.calendar', '.event', (e)=>
+      console.log 'drag end event emit'
+
+    @el.on 'dragenter.calendar', '.day', (e)=>
       e.preventDefault()
-      id = @dragging
-      event = @findEvent(id)
-      $event = $(".event[data-id='#{id}']")
+      event = @dragging
+      return unless event
+      days = event.end.clone().startOf('day').diff(event.start.clone().startOf('day'), 'd')
 
-      days = event.end.startOf('day').diff(event.start.startOf('day'), 'd')
-
-      $target = $(e.target)
-      unless $target.is '.day'
-        $target = $target.parents('.day')
+      $target = $(e.currentTarget)
 
       $('.day').removeClass 'dragover'
       index =  $('.day').index($target)
       $('.day').slice(index, days + index + 1).addClass 'dragover'
 
+    @el.on 'dragover.calendar', '.day', (e)=>
+      e.preventDefault()
 
     @el.on 'drop.calendar', '.day', (e) =>
-      e.preventDefault() #prevent firefox
-      id = e.originalEvent.dataTransfer.getData('Text')
-      $event = $(".event[data-id='#{id}']")
-      event = $event.data('event')
-      $target = $(e.target)
+      e.preventDefault() #firefox patch
+      event = @dragging
+      return unless event
 
-      unless $target.is '.day'
-        $target = $target.parents('.day')
-
+      $event = $(".event[data-id='#{event.id}']")
+      $target = $(e.currentTarget)
       newDate = $target.data('date')
-      differ = event.start.startOf('day').diff(moment(newDate), 'd')
+      differ = event.start.clone().startOf('day').diff(moment(newDate), 'd')
 
       $('.day').removeClass 'dragover'
       if differ is 0
-        $event.css 'opacity', 1
+        $event.removeClass 'dragged'
         return
 
-      @removeEvent(event)
       event.start.add(-differ, 'd')
       event.end.add(-differ, 'd')
-      @addEvent(event)
-      @trigger 'eventchanged', [event]
+      @replaceEvent(event)
+      @dragging = null
+      @trigger 'eventdragend', [event]
 
   moment: (args...) ->
     if @opts.timezone
@@ -307,12 +307,12 @@ class Calendar extends SimpleModule
 
     # resort event list if neccesary
     #for list in reorderList
-      #$events = $(list).children('.event')
-      #$events.sort (el1, el2) ->
-        #event1 = $(el1).data 'event'
-        #event2 = $(el2).data 'event'
-        #event1.start.diff event2.start
-      #$events.detach().appendTo list
+    #$events = $(list).children('.event')
+    #$events.sort (el1, el2) ->
+    #event1 = $(el1).data 'event'
+    #event2 = $(el2).data 'event'
+    #event1.start.diff event2.start
+    #$events.detach().appendTo list
 
     # render multi day events
     if eventsAcrossDay.length > 0
@@ -377,7 +377,7 @@ class Calendar extends SimpleModule
       $event = $(@_tpl.event).attr "data-id", event.id
 
     $event.data 'event', event
-      .find('.content').text event.content
+    .find('.content').text event.content
     $event.appendTo $eventList
 
     @trigger 'eventrender', [event, $event]
@@ -421,9 +421,9 @@ class Calendar extends SimpleModule
 
       $event = $(@_tpl.event).attr "data-id", event.id
       .css
-        width: days.length / 7 * 100 + '%'
-        top: @opts.eventHeight * slot
-        left: $week.find('.day').index(days[0]) / 7 * 100 + '%'
+          width: days.length / 7 * 100 + '%'
+          top: @opts.eventHeight * slot
+          left: $week.find('.day').index(days[0]) / 7 * 100 + '%'
       .data 'event', event
 
       $event.find('.content').text event.content
@@ -522,7 +522,7 @@ class Calendar extends SimpleModule
       $todo = $(@_tpl.todo).attr "data-id", todo.id
 
     $todo.data 'todo', todo
-      .toggleClass 'completed', todo.completed
+    .toggleClass 'completed', todo.completed
     $todo.find('.content').text todo.content
     $todo.find('.cb-done').prop('checked', todo.completed)
     $todoList.append($todo)
@@ -554,9 +554,9 @@ class Calendar extends SimpleModule
     @clearEvents()
     @clearTodos()
     @el.off '.calendar'
-      .removeData 'calendar'
-      .removeClass 'simple-calendar'
-      .empty()
+    .removeData 'calendar'
+    .removeClass 'simple-calendar'
+    .empty()
 
 
 calendar = (opts) ->

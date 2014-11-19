@@ -181,6 +181,9 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+.simple-calendar .weeks .week .events .event.dragged {
+  opacity: 0.4;
+}
 .simple-calendar .weeks .week .events .event.start .event-content {
   border-top-left-radius: 10px;
   border-bottom-left-radius: 10px;

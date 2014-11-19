@@ -1,4 +1,4 @@
-
+@charset "UTF-8";
 $event-height: 22px;
 
 .simple-calendar {
@@ -223,7 +223,9 @@ $event-height: 22px;
               text-overflow: ellipsis;
             }
           }
-
+          &.dragged {
+            opacity: 0.4;
+          }
           &.start .event-content {
             border-top-left-radius: 10px;
             border-bottom-left-radius: 10px;
