@@ -194,7 +194,10 @@ class Calendar extends SimpleModule
 
       if (event.acrossDay)
         $event.css
+          'position': 'fixed'
           'left': (e.originalEvent.clientX - 10) + 'px'
+          'top': (e.originalEvent.clientY - 5) + 'px'
+          
       $event.css
         'width': 'auto'
         'min-width': @el.find('.day').eq(0).width() + 'px'
