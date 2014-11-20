@@ -49,7 +49,7 @@
   border-right: none;
 }
 .simple-calendar .weeks .week .days .day.dragover {
-  background: #a9a9a9;
+  background: #d8d8d8;
 }
 .simple-calendar .weeks .week .days .day .info {
   height: 12px;

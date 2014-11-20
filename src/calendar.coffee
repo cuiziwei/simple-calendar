@@ -181,11 +181,9 @@ class Calendar extends SimpleModule
     @_bindDrag()
 
   _bindDrag: =>
-    #TODO: fix drag stop half way
     @el.on 'dragstart.calendar', '.event', (e) =>
       $event = $(e.currentTarget)
       event = $event.data('event')
-      console.log event
       e.originalEvent.dataTransfer.setData('Text', event.id) #firefox patch
       e.originalEvent.dataTransfer.effectAllowed = 'move'
       return unless event
@@ -194,6 +192,9 @@ class Calendar extends SimpleModule
       $copy = $event.clone()
       $copy.data 'event', event
 
+      if (event.acrossDay)
+        $event.css
+          'left': (e.originalEvent.clientX - 10) + 'px'
       $event.css
         'width': 'auto'
         'min-width': @el.find('.day').eq(0).width() + 'px'
@@ -208,9 +209,6 @@ class Calendar extends SimpleModule
       , 0
 
       @trigger 'eventdragstart', [event]
-
-    @el.on 'dragend.calendar', '.event', (e)=>
-      console.log 'drag end event emit'
 
     @el.on 'dragenter.calendar', '.day', (e)=>
       e.preventDefault()
@@ -227,6 +225,15 @@ class Calendar extends SimpleModule
     @el.on 'dragover.calendar', '.day', (e)=>
       e.originalEvent.dataTransfer.dropEffect = 'move'
       e.preventDefault()
+
+      clearTimeout @_dragTimer if @dragging
+      @_dragTimer = setTimeout =>
+        event = @dragging
+        return unless event
+        $event = $(".event[data-id='#{event.id}']")
+        $('.day').removeClass 'dragover'
+        $event.removeClass 'dragged'
+      , 100
 
     @el.on 'drop.calendar', '.day', (e) =>
       e.preventDefault() #firefox patch
